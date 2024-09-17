@@ -27,8 +27,9 @@ spec:
           - -c
           - sleep 30
       containers:
-      - image: dockerize:latest
+      - image: dockerize-app:latest
         name: dockerize
+        imagePullPolicy: Never
         resources: {}
         livenessProbe:
           httpGet:
