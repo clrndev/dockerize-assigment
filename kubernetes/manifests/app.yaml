@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: dockerize
+  name: dockerize
+  namespace: app-dockerize
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dockerize
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: dockerize
+    spec:
+      initContainers:
+      - image: busybox:1.28
+        name: init
+        resources: {}
+        command: 
+          - sh
+          - -c
+          - sleep 30
+      containers:
+      - image: dockerize:latest
+        name: dockerize
+        resources: {}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+        lifecycle:
+          preStop:
+            exec:
+              command: 
+                - sh
+                - -c
+                - sleep 5
+      terminationGracePeriodSeconds: 10
+status: {}
