@@ -10,21 +10,28 @@ import (
 	"time"
 
 	"github.com/cleitonnovotni/take-home-assignment-main/webserver/articlehandler"
+	"github.com/go-playground/validator"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type databaseConfiguration struct {
-	user     string
-	password string
-	protocol string
-	host     string
-	port     string
-	dbname   string
+type DatabaseConfiguration struct {
+	User     string `validate:"required"`
+	Password string `validate:"required"`
+	Protocol string `validate:"required" default:"tcp"`
+	Host     string `validate:"required"`
+	Port     string `validate:"required" default:"3306"`
+	Dbname   string `validate:"required"`
 }
 
-func generateDsn(config databaseConfiguration) error {
-	dsn := fmt.Sprintf("%s:%s@%s(%s:%s)/%s", config.user, config.password, config.protocol, config.host, config.port, config.dbname)
+func generateDsn(config DatabaseConfiguration) error {
+	validator := validator.New()
+	err := validator.Struct(config)
+	if err != nil {
+		return err
+	}
+
+	dsn := fmt.Sprintf("%s:%s@%s(%s:%s)/%s", config.User, config.Password, config.Protocol, config.Host, config.Port, config.Dbname)
 
 	return os.WriteFile("server.confi", []byte(dsn), 0600)
 }
@@ -39,13 +46,13 @@ func init() {
 	}
 
 	if _, config := os.Stat("server.confi"); os.IsNotExist(config) {
-		config := databaseConfiguration{
-			user:     os.Getenv("MYSQL_USER"),
-			password: os.Getenv("MYSQL_PASSWORD"),
-			protocol: "tcp",
-			host:     os.Getenv("MYSQL_HOST"),
-			port:     os.Getenv("MYSQL_PORT"),
-			dbname:   os.Getenv("MYSQL_DB"),
+		config := DatabaseConfiguration{
+			User:     os.Getenv("MYSQL_USER"),
+			Password: os.Getenv("MYSQL_PASSWORD"),
+			Protocol: "tcp",
+			Host:     os.Getenv("MYSQL_HOST"),
+			Port:     os.Getenv("MYSQL_PORT"),
+			Dbname:   os.Getenv("MYSQL_DB"),
 		}
 		err := generateDsn(config)
 		check(err)
@@ -67,6 +74,13 @@ func main() {
 	http.HandleFunc("/articles/", articlehandler.ReturnArticle)
 	http.HandleFunc("/index.html", articlehandler.ReturnHomePage)
 	http.HandleFunc("/api/articles", articlehandler.ReturnArticlesForHomePage)
+	http.HandleFunc("/preStopHook", func(w http.ResponseWriter, r *http.Request) {
+		for i := 0; i < 10; i++ {
+			time.Sleep(1 * time.Second)
+			log.Println(fmt.Sprintf("Server is shutting down in %d seconds", 10-i))
+		}
+		w.Write([]byte("Server is shutting down"))
+	})
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
