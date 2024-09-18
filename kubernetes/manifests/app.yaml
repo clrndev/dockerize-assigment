@@ -53,4 +53,3 @@ spec:
               port: 8080
               path: preStopHook
       terminationGracePeriodSeconds: 10
-status: {}

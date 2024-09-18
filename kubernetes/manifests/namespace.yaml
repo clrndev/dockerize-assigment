@@ -4,4 +4,3 @@ metadata:
   creationTimestamp: null
   name: app-dockerize
 spec: {}
-status: {}
